@@ -333,8 +333,12 @@
             profile: sliceProfile,
             producedLayers: msg.total
           };
-          zipFiles[`${jobFolder}/manifest.json`] = new TextEncoder().encode(JSON.stringify(manifest, null, 2));
-          zipFiles[`${jobFolder}/run.gcode`] = new TextEncoder().encode(generateRunGcode(msg.total, sliceProfile));
+          const manifestPath = `${jobFolder}/manifest.json`;
+          const gcodePath = `${jobFolder}/run.gcode`;
+          zipFiles[manifestPath] = new TextEncoder().encode(JSON.stringify(manifest, null, 2));
+          await logMsg('Added', manifestPath);
+          zipFiles[gcodePath] = new TextEncoder().encode(generateRunGcode(msg.total, sliceProfile));
+          await logMsg('Added', gcodePath);
 
           const zipped = zipSync(zipFiles);
           preparedZipBlob = new Blob([zipped], { type: 'application/zip' });
