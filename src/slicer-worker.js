@@ -38,8 +38,9 @@ self.onmessage = async (ev) => {
       const pixelCy = pixH / 2;
 
       function modelToPixel(x, y) {
+        const px = (x - modelCx) * scale + pixelCx;
         return [
-          (x - modelCx) * scale + pixelCx,
+          profile.mirror ? pixW - px : px,
           (y - modelCy) * scale + pixelCy
         ];
       }

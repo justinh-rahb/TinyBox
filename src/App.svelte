@@ -25,11 +25,12 @@
   let profile = {
     pixW: 320,
     pixH: 240,
-    buildW: 50,
-    buildH: 40,
+    buildW: 40.8,
+    buildH: 30.6,
     layerH: 0.05,
-    baseLayers: 5,
+    baseLayers: 8,
     invert: false,
+    mirror: true,
     aa: 'none',
     jobName: 'job'
   };
@@ -203,6 +204,7 @@
       layerH: Number(profile.layerH),
       baseLayers: Number(profile.baseLayers),
       invert: profile.invert,
+      mirror: profile.mirror,
       aa: profile.aa,
       jobName: profile.jobName || 'job'
     };
@@ -414,6 +416,10 @@
             <label class="checkbox-field">
               <input bind:checked={profile.invert} type="checkbox">
               <span>Invert mask</span>
+            </label>
+            <label class="checkbox-field">
+              <input bind:checked={profile.mirror} type="checkbox">
+              <span>Mirror mask</span>
             </label>
           </div>
           <p class="note">Firmware special rule: if device layer height is greater than 0.06 mm, TinyMaker firmware loads odd-indexed images, so TinyBox slices at half-step automatically.</p>

@@ -11,6 +11,7 @@ It loads STL files locally in your browser, slices them into 320x240 PNG mask la
 - TinyMaker-style PNG layer export: `1.png`, `2.png`, `3.png`, ...
 - ZIP output with a top-level job folder and `manifest.json`
 - Layer preview with scrubber and mouse-wheel stepping
+- Invert and mirror mask options
 - Light and dark mode
 - No server-side upload; slicing happens on your machine
 
@@ -44,6 +45,14 @@ This repo includes a GitHub Actions workflow at `.github/workflows/pages.yml`.
 On pushes to `main`, it installs dependencies, builds the Vite app, uploads `dist/`, and deploys to GitHub Pages.
 
 ## TinyMaker Notes
+
+The default profile is based on a TinyMaker/ChituBox-style configuration:
+
+- Resolution: `320 x 240`
+- Build area: `40.8 x 30.6 mm`
+- Layer height: `0.05 mm`
+- Bottom/base layers: `8`
+- Mirror mask: enabled by default
 
 TinyMaker firmware has a layer-height quirk: when device layer height is greater than `0.06 mm`, the firmware loads odd-indexed images. TinyBox handles this by slicing at half-step automatically.
 
