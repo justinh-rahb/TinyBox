@@ -2,14 +2,14 @@
 
 TinyBox is a small browser-based slicer for TinyMaker resin printers.
 
-It loads STL files locally in your browser, slices them into 320x240 PNG mask layers, and packages the result as a `job.zip` ready to copy to an SD card.
+It loads STL files locally in your browser, slices them into 320x240 PNG mask layers, writes a TinyMaker-style `run.gcode`, and packages the result as a `job.zip` ready to copy to an SD card.
 
 ## Features
 
 - STL loading in the browser
 - Sample cube for quick testing
 - TinyMaker-style PNG layer export: `1.png`, `2.png`, `3.png`, ...
-- ZIP output with a top-level job folder and `manifest.json`
+- ZIP output with a top-level job folder, `manifest.json`, and `run.gcode`
 - Layer preview with scrubber and mouse-wheel stepping
 - Invert and mirror mask options
 - Light and dark mode
@@ -55,6 +55,14 @@ The default profile is based on a TinyMaker/ChituBox-style configuration:
 - Mirror mask: enabled by default
 
 TinyMaker firmware has a layer-height quirk: when device layer height is greater than `0.06 mm`, the firmware loads odd-indexed images. TinyBox handles this by slicing at half-step automatically.
+
+TinyBox also writes `run.gcode` using the same image naming pattern:
+
+- `M6054 "N.png"` selects the layer image
+- `M106 S255` turns the light on
+- `M106 S0` turns the light off
+- bottom layers use the configured bottom exposure
+- later layers use the configured normal exposure
 
 The firmware layer limit is `1080`; TinyBox warns and stops if the estimated layer count exceeds that.
 

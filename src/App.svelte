@@ -32,7 +32,15 @@
     invert: false,
     mirror: true,
     aa: 'none',
-    jobName: 'job'
+    jobName: 'job',
+    normalExposure: 6,
+    bottomExposure: 50,
+    liftHeight: 5,
+    liftSpeed: 65,
+    retractSpeed: 150,
+    lightDelay: 0,
+    lightPwm: 255,
+    machineHeight: 54
   };
 
   $: canSlice = Boolean(meshTriangles) && !isSlicing;
@@ -53,6 +61,56 @@
   function toggleTheme() {
     theme = theme === 'dark' ? 'light' : 'dark';
     localStorage.setItem('tinybox-theme', theme);
+  }
+
+  function formatNumber(value, decimals = 3) {
+    return Number(value).toFixed(decimals).replace(/\.?0+$/, '');
+  }
+
+  function generateRunGcode(totalImages, sliceProfile) {
+    const lines = [
+      'G21;',
+      'G90;',
+      'M106 S0;',
+      'G28 Z0;',
+      ''
+    ];
+    const useOddImages = sliceProfile.layerH > 0.06;
+    const printableLayers = useOddImages ? Math.ceil(totalImages / 2) : totalImages;
+
+    for (let layer = 1; layer <= printableLayers; layer++) {
+      const imageIndex = useOddImages ? ((layer - 1) * 2) + 1 : layer;
+      if (imageIndex > totalImages) break;
+
+      const currPos = imageIndex * sliceProfile.exportStep;
+      const risePos = currPos + sliceProfile.liftHeight;
+      const exposureSeconds = layer <= sliceProfile.baseLayers
+        ? sliceProfile.bottomExposure
+        : sliceProfile.normalExposure;
+
+      lines.push(
+        `;LAYER_START:${layer - 1}`,
+        `;currPos:${formatNumber(currPos)}`,
+        `M6054 "${imageIndex}.png";show Image`,
+        `G0 Z${formatNumber(risePos)} F${formatNumber(sliceProfile.liftSpeed)};`,
+        `G0 Z${formatNumber(currPos)} F${formatNumber(sliceProfile.retractSpeed)};`,
+        `G4 P${Math.round(sliceProfile.lightDelay * 1000)};`,
+        `M106 S${Math.round(sliceProfile.lightPwm)};light on`,
+        `G4 P${Math.round(exposureSeconds * 1000)};`,
+        'M106 S0; light off',
+        ';LAYER_END',
+        ''
+      );
+    }
+
+    lines.push(
+      'M106 S0;',
+      `G1 Z${formatNumber(sliceProfile.machineHeight)} F25;`,
+      'M18;',
+      ''
+    );
+
+    return lines.join('\n');
   }
 
   async function logMsg(...args) {
@@ -206,7 +264,15 @@
       invert: profile.invert,
       mirror: profile.mirror,
       aa: profile.aa,
-      jobName: profile.jobName || 'job'
+      jobName: profile.jobName || 'job',
+      normalExposure: Number(profile.normalExposure),
+      bottomExposure: Number(profile.bottomExposure),
+      liftHeight: Number(profile.liftHeight),
+      liftSpeed: Number(profile.liftSpeed),
+      retractSpeed: Number(profile.retractSpeed),
+      lightDelay: Number(profile.lightDelay),
+      lightPwm: Number(profile.lightPwm),
+      machineHeight: Number(profile.machineHeight)
     };
 
     sliceProfile.exportStep = sliceProfile.layerH <= 0.06 ? sliceProfile.layerH : sliceProfile.layerH / 2;
@@ -268,6 +334,7 @@
             producedLayers: msg.total
           };
           zipFiles[`${jobFolder}/manifest.json`] = new TextEncoder().encode(JSON.stringify(manifest, null, 2));
+          zipFiles[`${jobFolder}/run.gcode`] = new TextEncoder().encode(generateRunGcode(msg.total, sliceProfile));
 
           const zipped = zipSync(zipFiles);
           preparedZipBlob = new Blob([zipped], { type: 'application/zip' });
@@ -423,6 +490,43 @@
             </label>
           </div>
           <p class="note">Firmware special rule: if device layer height is greater than 0.06 mm, TinyMaker firmware loads odd-indexed images, so TinyBox slices at half-step automatically.</p>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="gcode-title">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" id="gcode-title">G-code</h2>
+            <p class="panel-subtitle">Exposure and Z motion settings for the generated run.gcode file.</p>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="controls-grid">
+            <label class="field">Normal Exposure (s)
+              <input bind:value={profile.normalExposure} type="number" step="0.1" min="0">
+            </label>
+            <label class="field">Bottom Exposure (s)
+              <input bind:value={profile.bottomExposure} type="number" step="0.1" min="0">
+            </label>
+            <label class="field">Lift Height (mm)
+              <input bind:value={profile.liftHeight} type="number" step="0.1" min="0">
+            </label>
+            <label class="field">Lift Speed
+              <input bind:value={profile.liftSpeed} type="number" step="1" min="0">
+            </label>
+            <label class="field">Retract Speed
+              <input bind:value={profile.retractSpeed} type="number" step="1" min="0">
+            </label>
+            <label class="field">Light Delay (s)
+              <input bind:value={profile.lightDelay} type="number" step="0.1" min="0">
+            </label>
+            <label class="field">Light PWM
+              <input bind:value={profile.lightPwm} type="number" step="1" min="0" max="255">
+            </label>
+            <label class="field">Machine Height (mm)
+              <input bind:value={profile.machineHeight} type="number" step="0.1" min="0">
+            </label>
+          </div>
         </div>
       </section>
 
