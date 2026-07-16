@@ -1,5 +1,5 @@
 <script>
-  import { tick } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { zipSync } from 'fflate';
   import * as THREE from 'three';
   import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
@@ -14,6 +14,7 @@
   let preparedZipName = 'job.zip';
   let progress = 'idle';
   let selectedModelName = 'No model loaded';
+  let theme = 'light';
   let logs = [];
   let previewMax = 1;
   let previewLayer = 1;
@@ -35,6 +36,23 @@
 
   $: canSlice = Boolean(meshTriangles) && !isSlicing;
   $: canDownload = Boolean(preparedZipBlob);
+  $: if (typeof document !== 'undefined') {
+    document.documentElement.dataset.theme = theme;
+  }
+
+  onMount(() => {
+    const savedTheme = localStorage.getItem('tinybox-theme');
+    if (savedTheme === 'dark' || savedTheme === 'light') {
+      theme = savedTheme;
+    } else if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+      theme = 'dark';
+    }
+  });
+
+  function toggleTheme() {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('tinybox-theme', theme);
+  }
 
   async function logMsg(...args) {
     logs = [...logs, args.join(' ')];
@@ -307,9 +325,27 @@
       </div>
       <p class="tagline">A compact browser slicer for TinyMaker printers. Load an STL, prepare the image stack, then save a ZIP for the SD card.</p>
     </div>
-    <div class="status-pill" aria-live="polite">
-      <span class="status-dot" aria-hidden="true"></span>
-      <span>{progress}</span>
+    <div class="header-actions">
+      <a class="icon-link" href="https://github.com/justinh-rahb/TinyBox" target="_blank" rel="noreferrer" aria-label="Open TinyBox on GitHub">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 2C6.48 2 2 6.58 2 12.22c0 4.51 2.87 8.34 6.84 9.69.5.09.68-.22.68-.49v-1.9c-2.78.62-3.37-1.21-3.37-1.21-.45-1.19-1.11-1.5-1.11-1.5-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05A9.36 9.36 0 0 1 12 6.91c.85 0 1.7.12 2.5.34 1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.8-4.57 5.05.36.32.68.94.68 1.9v2.81c0 .27.18.59.69.49A10.05 10.05 0 0 0 22 12.22C22 6.58 17.52 2 12 2Z" />
+        </svg>
+      </a>
+      <button class="theme-toggle" type="button" on:click={toggleTheme} aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+        {#if theme === 'dark'}
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 4.75a1 1 0 0 1 1-1h.01a1 1 0 0 1 0 2H13a1 1 0 0 1-1-1Zm0 14.5a1 1 0 0 1 1-1h.01a1 1 0 0 1 0 2H13a1 1 0 0 1-1-1ZM4.75 12a1 1 0 0 1-1-1v-.01a1 1 0 0 1 2 0V11a1 1 0 0 1-1 1Zm14.5 0a1 1 0 0 1-1-1v-.01a1 1 0 0 1 2 0V11a1 1 0 0 1-1 1ZM6.52 6.52a1 1 0 0 1 0-1.41l.01-.01a1 1 0 1 1 1.41 1.41l-.01.01a1 1 0 0 1-1.41 0Zm10.25 10.25a1 1 0 0 1 0-1.41l.01-.01a1 1 0 0 1 1.41 1.41l-.01.01a1 1 0 0 1-1.41 0ZM6.52 17.48a1 1 0 0 1-1.41 0l-.01-.01a1 1 0 0 1 1.41-1.41l.01.01a1 1 0 0 1 0 1.41ZM16.77 7.23a1 1 0 0 1-1.41 0l-.01-.01a1 1 0 0 1 1.41-1.41l.01.01a1 1 0 0 1 0 1.41ZM12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z" />
+          </svg>
+        {:else}
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20.2 14.63A7.55 7.55 0 0 1 9.37 3.8a.9.9 0 0 0-1.02-1.38 9.55 9.55 0 1 0 13.23 13.23.9.9 0 0 0-1.38-1.02ZM12 20a7.55 7.55 0 0 1-5.37-12.86A9.35 9.35 0 0 0 16.86 17.37 7.5 7.5 0 0 1 12 20Z" />
+          </svg>
+        {/if}
+      </button>
+      <div class="status-pill" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span>{progress}</span>
+      </div>
     </div>
   </header>
 
@@ -461,6 +497,10 @@
       </section>
     </aside>
   </main>
+
+  <footer class="app-footer">
+    Made with 🤖 by Justin Hayes
+  </footer>
 </div>
 
 <style>
@@ -468,6 +508,11 @@
     color-scheme: light;
     --bg: #f4f6f8;
     --panel: #ffffff;
+    --panel-muted: #f8fafb;
+    --control: #ffffff;
+    --console: #11191c;
+    --console-text: #dce7e9;
+    --preview-check: #edf2f4;
     --ink: #172126;
     --muted: #61717a;
     --line: #d9e1e6;
@@ -480,6 +525,27 @@
     --shadow: 0 18px 45px rgba(27, 43, 51, 0.08);
     --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
     --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  :global(:root[data-theme="dark"]) {
+    color-scheme: dark;
+    --bg: #11181c;
+    --panel: #172126;
+    --panel-muted: #1d2a30;
+    --control: #10181c;
+    --console: #071012;
+    --console-text: #d7e5e8;
+    --preview-check: #223137;
+    --ink: #ecf3f4;
+    --muted: #9aadb5;
+    --line: #2c3b42;
+    --line-strong: #4a5d66;
+    --accent: #40c3b5;
+    --accent-dark: #7adbd1;
+    --accent-soft: #153f3d;
+    --warn-soft: #3b2d12;
+    --warn: #f2c56b;
+    --shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
   }
 
   :global(*) {
@@ -504,7 +570,7 @@
     min-height: 40px;
     border: 1px solid var(--line-strong);
     border-radius: 6px;
-    background: #fff;
+    background: var(--control);
     color: var(--ink);
     cursor: pointer;
     font-weight: 700;
@@ -526,7 +592,7 @@
     min-height: 40px;
     border: 1px solid var(--line-strong);
     border-radius: 6px;
-    background: #fff;
+    background: var(--control);
     color: var(--ink);
     padding: 7px 9px;
   }
@@ -629,6 +695,49 @@
     white-space: nowrap;
   }
 
+  .header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: end;
+    gap: 10px;
+  }
+
+  .icon-link,
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--panel);
+    color: var(--muted);
+    box-shadow: var(--shadow);
+    text-decoration: none;
+  }
+
+  .icon-link {
+    width: 38px;
+  }
+
+  .theme-toggle {
+    width: 38px;
+    padding: 0;
+  }
+
+  .icon-link svg,
+  .theme-toggle svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+  }
+
+  .icon-link:hover,
+  .theme-toggle:hover {
+    border-color: var(--accent);
+    color: var(--accent-dark);
+  }
+
   .status-dot {
     width: 9px;
     height: 9px;
@@ -682,7 +791,7 @@
   }
 
   .debug-panel .panel-header {
-    background: #f8fafb;
+    background: var(--panel-muted);
   }
 
   .debug-panel .panel-body {
@@ -729,7 +838,7 @@
     min-height: 40px;
     border: 1px solid var(--line-strong);
     border-radius: 6px;
-    background: #fff;
+    background: var(--control);
     overflow: hidden;
   }
 
@@ -738,7 +847,7 @@
     align-items: center;
     align-self: stretch;
     border-right: 1px solid var(--line-strong);
-    background: #f8fafb;
+    background: var(--panel-muted);
     color: var(--ink);
     cursor: pointer;
     font-size: 13px;
@@ -782,7 +891,7 @@
     gap: 9px;
     border: 1px solid var(--line-strong);
     border-radius: 6px;
-    background: #fff;
+    background: var(--control);
     padding: 0 12px;
     color: var(--ink);
     font-size: 13px;
@@ -875,7 +984,7 @@
     align-items: center;
     border: 1px solid var(--line);
     border-radius: 6px;
-    background: #f8fafb;
+    background: var(--panel-muted);
     color: var(--muted);
     font-family: var(--mono);
     font-size: 13px;
@@ -899,10 +1008,10 @@
     border: 1px solid var(--line);
     border-radius: 8px;
     background:
-      linear-gradient(45deg, #edf2f4 25%, transparent 25%),
-      linear-gradient(-45deg, #edf2f4 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #edf2f4 75%),
-      linear-gradient(-45deg, transparent 75%, #edf2f4 75%);
+      linear-gradient(45deg, var(--preview-check) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--preview-check) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--preview-check) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--preview-check) 75%);
     background-position: 0 0, 0 8px, 8px -8px, -8px 0;
     background-size: 16px 16px;
     overscroll-behavior: contain;
@@ -934,14 +1043,22 @@
     margin: 0;
     overflow: auto;
     border-radius: 6px;
-    background: #11191c;
-    color: #dce7e9;
+    background: var(--console);
+    color: var(--console-text);
     font-family: var(--mono);
     font-size: 12px;
     line-height: 1.45;
     padding: 16px;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+  }
+
+  .app-footer {
+    margin-top: 20px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
   }
 
   @media (max-width: 900px) {
@@ -952,6 +1069,10 @@
 
     .status-pill {
       justify-self: start;
+    }
+
+    .header-actions {
+      justify-content: start;
     }
   }
 
